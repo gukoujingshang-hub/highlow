@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>HIGH &amp; LOW｜配信用ハイ＆ロー</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=M+PLUS+Rounded+1c:wght@500;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#d4effa;
+  --ink:#1b2738; --sub:#4f6075;
+  --high:#e5323b; --low:#1c62d6; --draw:#7b55c9; --gold:#f2a100; --ok:#13a058;
+  --panel:rgba(255,255,255,.75);
+  --card-w:clamp(110px, min(19vw, 31vh), 340px);
+  --font:"M PLUS Rounded 1c","Hiragino Maru Gothic ProN","Hiragino Sans","Meiryo",system-ui,sans-serif;
+  --disp:"Bungee","Arial Black","Impact",sans-serif;
+  --sym:"Segoe UI Symbol","Apple Symbols","Noto Sans Symbols 2","DejaVu Sans",sans-serif;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;height:100%;font-family:var(--font);color:var(--ink);background:var(--bg);transition:background-color .4s;overflow-x:hidden;-webkit-tap-highlight-color:transparent}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(circle at 15% 20%,rgba(255,255,255,.55),transparent 40%),
+    radial-gradient(circle at 85% 80%,rgba(255,255,255,.45),transparent 45%),
+    radial-gradient(rgba(255,255,255,.5) 1.5px,transparent 1.6px) 0 0/26px 26px;}
+button{font-family:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:4px solid var(--ink);outline-offset:3px}
+
+.app{position:relative;z-index:1;min-height:100%;max-width:1920px;margin:0 auto;display:grid;
+  grid-template-rows:auto auto 1fr auto auto auto;gap:clamp(6px,1.2vh,16px);
+  padding:clamp(8px,1.6vh,22px) clamp(10px,2.2vw,36px)}
+
+/* ---------- header ---------- */
+.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.logo{font-family:var(--disp);font-size:clamp(22px,2.6vw,44px);line-height:1;white-space:nowrap;text-shadow:0 3px 0 #fff}
+.logo .h{color:var(--high)} .logo .l{color:var(--low)} .logo .amp{color:var(--ink);margin:0 .1em;font-size:.7em}
+.players{flex:1;min-width:240px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--panel);border-radius:999px;padding:6px 8px 6px 18px;box-shadow:0 2px 0 rgba(27,39,56,.08)}
+.players-lbl{font-weight:900;font-size:14px;color:var(--sub)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:4px;background:#fff;border:2px solid var(--ink);border-radius:999px;padding:2px 6px 2px 12px;font-weight:800;font-size:clamp(13px,1.5vh,18px)}
+.chip .x{border:none;background:transparent;font-size:14px;color:var(--sub);padding:0 4px;line-height:1}
+.players input{flex:1;min-width:140px;border:none;background:transparent;font:inherit;font-weight:800;font-size:15px;padding:6px 4px;color:var(--ink)}
+.players input::placeholder{color:#8a98aa}
+.add-btn{border:none;background:var(--ink);color:#fff;font-weight:800;border-radius:999px;padding:7px 14px;font-size:14px}
+.tools{display:flex;align-items:center;gap:8px;margin-left:auto}
+.pill{background:var(--panel);border-radius:999px;padding:6px 12px;font-weight:800;font-size:13px;color:var(--sub);white-space:nowrap}
+.tool{border:2px solid var(--ink);background:#fff;color:var(--ink);font-weight:800;border-radius:12px;padding:6px 12px;font-size:14px;white-space:nowrap}
+.tool.mini{font-size:12px;padding:4px 8px;border-width:1.5px;opacity:.75}
+.tool.mini.armed{background:var(--high);color:#fff;border-color:var(--high);opacity:1}
+
+/* ---------- result banner ---------- */
+.banner{text-align:center;min-height:clamp(74px,14vh,170px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.dir{font-family:var(--disp);font-size:clamp(46px,9.5vh,128px);line-height:1;letter-spacing:.02em;text-shadow:0 5px 0 #fff,0 10px 22px rgba(27,39,56,.18)}
+.dir.high{color:var(--high)} .dir.low{color:var(--low)} .dir.draw{color:var(--draw)}
+.dir.prompt{color:var(--ink);font-size:clamp(30px,6vh,80px);opacity:.9}
+.verdict{font-weight:900;font-size:clamp(17px,3.2vh,42px);min-height:1.2em}
+.verdict.win{color:var(--ok)} .verdict.lose{color:#5e6b7c} .verdict.draw{color:var(--draw)}
+.pop{animation:pop .55s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pop{0%{transform:scale(.3);opacity:0}100%{transform:scale(1);opacity:1}}
+
+/* ---------- stage ---------- */
+.stage{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:clamp(12px,3.4vw,70px)}
+.slot{display:flex;flex-direction:column;align-items:center;gap:clamp(6px,1.2vh,14px)}
+.slot.left{justify-self:end} .slot.right{justify-self:start}
+.slot-label{font-weight:900;background:var(--ink);color:#fff;border-radius:999px;padding:4px 18px;font-size:clamp(12px,1.7vh,20px);letter-spacing:.06em}
+.slot.right .slot-label{background:#fff;color:var(--ink);border:2px solid var(--ink)}
+.mid{display:flex;flex-direction:column;align-items:center;gap:clamp(8px,1.6vh,18px);z-index:1}
+.vs{font-family:var(--disp);font-size:clamp(26px,5vh,64px);color:#fff;text-shadow:0 3px 0 var(--ink),2px 0 0 var(--ink),-2px 0 0 var(--ink),0 -2px 0 var(--ink)}
+.streak{background:#fff;border-radius:24px;padding:clamp(8px,1.4vh,16px) clamp(16px,2vw,30px);text-align:center;border:3px solid var(--ink);box-shadow:0 6px 0 var(--ink);min-width:clamp(110px,10vw,190px)}
+.streak .num{font-family:var(--disp);font-size:clamp(42px,9.5vh,120px);color:var(--gold);line-height:1;text-shadow:0 3px 0 #c97f00}
+.streak .lbl{font-weight:900;font-size:clamp(14px,2.2vh,26px)}
+.streak .best{font-weight:800;font-size:clamp(11px,1.5vh,16px);color:var(--sub)}
+.streak.bump .num{animation:pop .5s cubic-bezier(.2,1.6,.4,1)}
+body.hide-streak .streak{display:none}
+.pred{font-weight:900;font-size:clamp(14px,2.2vh,26px);background:var(--panel);border-radius:999px;padding:4px 16px;white-space:nowrap}
+.pred b{font-family:var(--disp);font-weight:400}
+.pred.high b{color:var(--high)} .pred.low b{color:var(--low)} .pred.none b{color:#8a98aa}
+
+/* ---------- cards ---------- */
+.card{width:var(--card-w);aspect-ratio:5/7;perspective:1400px;container-type:inline-size;position:relative;
+  transition:transform .5s cubic-bezier(.2,.8,.2,1),opacity .45s}
+.slot.right .card{z-index:3}
+.inner{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .7s cubic-bezier(.45,.05,.2,1)}
+.card.faceup .inner{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;border-radius:8cqw;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  box-shadow:0 2cqw 0 rgba(27,39,56,.18),0 7cqw 16cqw rgba(20,40,70,.28);transition:box-shadow .3s}
+.front{background:#fff;transform:rotateY(180deg)}
+.front::before{content:"";position:absolute;inset:3.5cqw;border-radius:5.5cqw;border:.8cqw solid rgba(27,39,56,.08)}
+.back{background:#fff}
+.back::before{content:"";position:absolute;inset:4.5cqw;border-radius:5cqw;
+  background:repeating-linear-gradient(45deg,#2c5fd8 0 4cqw,#3c74f1 4cqw 8cqw);box-shadow:inset 0 0 0 1.5cqw #fff,inset 0 0 0 2.6cqw #2c5fd8}
+.back::after{content:"H&L";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:46cqw;height:46cqw;border-radius:50%;
+  background:#fff;color:var(--high);display:grid;place-items:center;font-family:var(--disp);font-size:13cqw;box-shadow:0 0 0 2cqw #2c5fd8}
+.corner{position:absolute;display:flex;flex-direction:column;align-items:center;line-height:.95}
+.corner.tl{top:6cqw;left:7cqw} .corner.br{bottom:6cqw;right:7cqw;transform:rotate(180deg)}
+.corner .r{font-family:var(--disp);font-size:16cqw}
+.corner .s{font-family:var(--sym);font-size:14cqw}
+.center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.center .r{font-family:var(--disp);font-size:44cqw;line-height:1}
+.center .s{font-family:var(--sym);font-size:30cqw;line-height:1;margin-top:-1cqw}
+.red{color:#d8262f} .black{color:#1b2738}
+.card.win .front{box-shadow:0 0 0 2.2cqw var(--gold),0 0 18cqw rgba(242,161,0,.8)}
+.card.lose .front{box-shadow:0 0 0 2.2cqw #8b97a8,0 7cqw 16cqw rgba(20,40,70,.28)}
+.card.drawn .front{box-shadow:0 0 0 2.2cqw var(--draw),0 0 14cqw rgba(123,85,201,.55)}
+.card.tease{animation:tease .5s ease-in-out}
+@keyframes tease{0%,100%{transform:none}20%{transform:rotate(-4deg) translateY(-3%)}40%{transform:rotate(4deg) translateY(-3%)}60%{transform:rotate(-3deg)}80%{transform:rotate(2deg)}}
+.card.flipping{transform:scale(1.08) translateY(-3%)}
+.card.exit{transform:translateX(-45%) rotate(-12deg) scale(.85);opacity:0}
+.card.dealin{animation:dealin .5s cubic-bezier(.2,1.4,.4,1)}
+@keyframes dealin{from{transform:translateY(-40%) rotate(8deg);opacity:0}to{transform:none;opacity:1}}
+.card.spin .inner{animation:spin .8s cubic-bezier(.45,.05,.3,1)}
+@keyframes spin{from{transform:rotateY(180deg)}to{transform:rotateY(540deg)}}
+.card.instant,.card.instant .inner{transition:none!important;animation:none!important}
+.stage.shake{animation:shake .45s}
+@keyframes shake{0%,100%{transform:none}20%{transform:translateX(-12px)}40%{transform:translateX(10px)}60%{transform:translateX(-7px)}80%{transform:translateX(4px)}}
+
+/* ---------- last result (stream mode) ---------- */
+.last{display:none;text-align:center;font-weight:900;font-size:clamp(16px,3vh,38px);background:var(--panel);border-radius:999px;padding:6px 26px;justify-self:center}
+.last .tag{font-weight:800;color:var(--sub);margin-right:.6em;font-size:.75em}
+.last .high{color:var(--high)} .last .low{color:var(--low)} .last .draw{color:var(--draw)}
+.last .v-win{color:var(--ok)} .last .v-lose{color:#5e6b7c}
+
+/* ---------- controls ---------- */
+.controls{display:flex;flex-direction:column;align-items:center;gap:clamp(8px,1.6vh,18px)}
+.bets{display:flex;gap:clamp(12px,3vw,48px)}
+.bet{font-family:var(--disp);font-size:clamp(24px,4.8vh,58px);padding:.3em .9em;border-radius:22px;border:none;color:#fff;
+  box-shadow:0 .14em 0 rgba(0,0,0,.28);transition:transform .15s,box-shadow .15s,opacity .2s;min-width:clamp(140px,14vw,280px)}
+.bet.high{background:var(--high)} .bet.low{background:var(--low)}
+.bet:hover:not(:disabled){transform:translateY(-2px)}
+.bet:active:not(:disabled){transform:translateY(3px);box-shadow:0 .05em 0 rgba(0,0,0,.28)}
+.bet.selected{transform:translateY(-4px) scale(1.06);box-shadow:0 0 0 6px #fff,0 0 0 10px currentColor,0 .2em 0 rgba(0,0,0,.28)}
+.bet.high.selected{color:#fff;box-shadow:0 0 0 6px #fff,0 0 0 10px var(--high),0 10px 24px rgba(229,50,59,.45)}
+.bet.low.selected{box-shadow:0 0 0 6px #fff,0 0 0 10px var(--low),0 10px 24px rgba(28,98,214,.45)}
+.bets.has-pick .bet:not(.selected){opacity:.45}
+.bet:disabled{opacity:.3;cursor:not-allowed}
+.actions{display:flex;align-items:center;gap:clamp(10px,2vw,24px)}
+.main-btn{font-weight:900;font-size:clamp(22px,4.2vh,48px);color:#fff;border:none;border-radius:999px;padding:.45em 2.2em;
+  background:linear-gradient(#ffb627,#f29a00);box-shadow:0 .16em 0 #b06d00,0 10px 24px rgba(242,161,0,.35);text-shadow:0 2px 0 rgba(150,90,0,.5);transition:transform .12s}
+.main-btn:active:not(:disabled){transform:translateY(4px);box-shadow:0 .05em 0 #b06d00}
+.main-btn:disabled{filter:grayscale(.6);opacity:.6;cursor:wait}
+.main-btn.ready{animation:breathe 1.6s ease-in-out infinite}
+@keyframes breathe{50%{transform:scale(1.04)}}
+.sub-btn{font-weight:800;font-size:clamp(14px,2vh,20px);border:2px solid var(--ink);background:#fff;color:var(--ink);border-radius:999px;padding:.45em 1.1em}
+
+.x-btn{background:#0f1419;color:#fff;border-color:#0f1419}
+.x-btn:disabled{opacity:.3;cursor:not-allowed}
+.tag-in{border:2px solid #d5dde6;border-radius:10px;padding:7px 10px;font:inherit;font-weight:800;font-size:14px;min-width:220px;color:var(--ink);background:#fff}
+
+/* ---------- footer ---------- */
+.foot{display:flex;flex-direction:column;align-items:center;gap:6px}
+.history{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;min-height:30px}
+.hchip{background:#fff;border-radius:999px;padding:3px 10px;font-weight:800;font-size:13px;border:2px solid #c7d0db;white-space:nowrap}
+.hchip.win{border-color:var(--ok)} .hchip.lose{opacity:.6} .hchip.draw{border-color:var(--draw)}
+.hchip i{font-style:normal;font-family:var(--disp);margin-right:4px}
+.hchip i.high{color:var(--high)} .hchip i.low{color:var(--low)} .hchip i.draw{color:var(--draw)}
+.hint{font-size:12px;color:var(--sub);font-weight:500}
+.hint kbd{font-family:inherit;font-weight:800;background:#fff;border-radius:5px;padding:0 5px;border:1px solid #c7d0db}
+
+/* ---------- stream mode ---------- */
+body.stream{--card-w:clamp(120px,min(24vw,40vh),460px)}
+body.stream .players input,body.stream .add-btn,body.stream .chip .x,body.stream .tools,body.stream .foot{display:none}
+body.stream .players{flex:0 1 auto;background:transparent;box-shadow:none}
+body.stream .players.empty{display:none}
+body.stream .top{justify-content:center}
+body.stream .dir{font-size:clamp(60px,13vh,190px)}
+body.stream .last{display:block}
+body.stream .last:empty{display:none}
+body.stream .controls{opacity:.12;transition:opacity .25s}
+body.stream .controls:hover,body.stream .controls:focus-within{opacity:1}
+.exit-stream{display:none;position:fixed;top:calc(10px + env(safe-area-inset-top,0px));right:12px;z-index:20;border:none;background:rgba(27,39,56,.55);color:#fff;font-weight:800;border-radius:999px;padding:6px 12px;font-size:12px;opacity:.25}
+.exit-stream:hover{opacity:1}
+body.stream .exit-stream{display:block}
+
+/* ---------- overlay fx ---------- */
+#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:30}
+.boom{position:fixed;left:50%;top:42%;transform:translate(-50%,-50%) scale(0);z-index:31;pointer-events:none;
+  font-family:var(--disp);font-size:clamp(48px,12vh,170px);color:var(--gold);white-space:nowrap;
+  text-shadow:0 6px 0 #b06d00,0 0 40px #fff,0 0 80px #fff}
+.boom.go{animation:boom 1.6s cubic-bezier(.2,1.5,.4,1) forwards}
+@keyframes boom{0%{transform:translate(-50%,-50%) scale(0) rotate(-12deg);opacity:1}25%{transform:translate(-50%,-50%) scale(1.1) rotate(-4deg)}35%{transform:translate(-50%,-50%) scale(1) rotate(-4deg)}80%{opacity:1}100%{transform:translate(-50%,-60%) scale(1) rotate(-4deg);opacity:0}}
+.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translate(-50%,30px);opacity:0;z-index:40;
+  background:var(--ink);color:#fff;font-weight:800;padding:10px 18px;border-radius:14px;transition:.3s;pointer-events:none;max-width:90vw;text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+.credit{position:fixed;right:calc(14px + env(safe-area-inset-right,0px));bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:15;
+  font-weight:900;font-size:clamp(13px,1.8vh,22px);color:var(--ink);background:var(--panel);border-radius:999px;padding:4px 14px;
+  pointer-events:none;letter-spacing:.04em}
+@media (max-width:760px){.credit{position:static;display:block;width:max-content;margin:8px 12px 12px auto}}
+
+/* ---------- settings modal ---------- */
+.modal-bg{position:fixed;inset:0;background:rgba(15,28,48,.5);display:none;place-items:center;z-index:50;padding:16px}
+.modal-bg.open{display:grid}
+.modal{background:#fff;color:var(--ink);border-radius:24px;max-width:580px;width:100%;padding:22px 24px;max-height:90vh;overflow:auto;border:3px solid var(--ink);box-shadow:0 8px 0 var(--ink)}
+.modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.modal h2{margin:0;font-size:22px;font-weight:900}
+.icon-btn{border:none;background:#eef2f6;border-radius:50%;width:36px;height:36px;font-size:16px}
+.set-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 0;border-bottom:1px solid #e3e8ee;flex-wrap:wrap}
+.set-row.col{flex-direction:column;align-items:stretch}
+.set-name{font-weight:900}
+.set-desc{font-size:12px;color:var(--sub);font-weight:500}
+.seg{display:flex;background:#eef2f6;border-radius:12px;padding:4px;gap:4px}
+.seg button{border:none;background:transparent;padding:7px 14px;border-radius:9px;font-weight:800;color:var(--sub);font-size:14px}
+.seg button.on{background:var(--ink);color:#fff}
+.swatches{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:10px}
+.sw{border:2px solid rgba(27,39,56,.15);border-radius:12px;aspect-ratio:1.4;font-size:11px;font-weight:800;color:var(--ink);display:flex;align-items:flex-end;justify-content:center;padding:3px}
+.sw.on{border:3px solid var(--ink);box-shadow:0 3px 0 var(--ink)}
+.keys{font-size:12px;color:var(--sub);margin:14px 0 0;line-height:1.8}
+
+/* ---------- responsive ---------- */
+@media (max-width:760px){
+  :root{--card-w:min(40vw,30vh)}
+  body.stream{--card-w:min(42vw,34vh)}
+  .stage{grid-template-columns:1fr 1fr;grid-template-areas:"mid mid" "l r";gap:12px}
+  .slot.left{grid-area:l;justify-self:center} .slot.right{grid-area:r;justify-self:center}
+  .mid{grid-area:mid;flex-direction:row;flex-wrap:wrap;justify-content:center}
+  .vs{display:none}
+  .streak{display:flex;align-items:baseline;gap:8px;padding:6px 16px;box-shadow:0 4px 0 var(--ink)}
+  .streak .num{font-size:40px}
+  .tools{margin-left:0;flex-wrap:wrap}
+  .bet{min-width:0;flex:1}
+  .bets{width:100%}
+  .swatches{grid-template-columns:repeat(4,1fr)}
+}
+@media (prefers-reduced-motion:reduce){
+  .main-btn.ready{animation:none}
+}
+</style>
+</head>
+<body>
+<canvas id="fx"></canvas>
+
+<div class="app">
+  <header class="top">
+    <div class="logo" aria-label="HIGH & LOW"><span class="h">HIGH</span><span class="amp">&amp;</span><span class="l">LOW</span></div>
+    <div class="players" id="players">
+      <span class="players-lbl">参加者</span>
+      <div class="chips" id="chips"></div>
+      <input id="playerIn" placeholder="名前を入力して Enter" maxlength="20" aria-label="参加者の名前">
+      <button class="add-btn" id="addPlayer">追加</button>
+    </div>
+    <div class="tools">
+      <span class="pill" id="deckPill">山札 52 / 52</span>
+      <button class="tool" id="streamBtn">📺 配信モード</button>
+      <button class="tool" id="settingsBtn">⚙ 設定</button>
+      <button class="tool mini" id="shuffleBtn" title="シャッフルして待機画面に戻る">🔀 シャッフル</button>
+    </div>
+  </header>
+
+  <section class="banner" aria-live="polite">
+    <div class="dir prompt" id="dirText">READY?</div>
+    <div class="verdict" id="verdictText"></div>
+  </section>
+
+  <section class="stage" id="stage">
+    <div class="slot left">
+      <div class="slot-label">いまのカード</div>
+      <div class="card faceup" id="cardL"><div class="inner"><div class="face front" id="frontL"></div><div class="face back"></div></div></div>
+    </div>
+    <div class="mid">
+      <div class="vs">VS</div>
+      <div class="streak" id="streakBox">
+        <div class="num" id="streakNum">0</div>
+        <div class="lbl">連勝</div>
+        <div class="best" id="bestNum">最高 0</div>
+      </div>
+      <div class="pred none" id="predBadge">予想 <b>？</b></div>
+    </div>
+    <div class="slot right">
+      <div class="slot-label">つぎのカード</div>
+      <div class="card" id="cardR"><div class="inner"><div class="face front" id="frontR"></div><div class="face back"></div></div></div>
+    </div>
+  </section>
+
+  <div class="last" id="lastLine"></div>
+
+  <section class="controls">
+    <div class="bets" id="bets">
+      <button class="bet high" id="betH">▲ HIGH</button>
+      <button class="bet low" id="betL">LOW ▼</button>
+    </div>
+    <div class="actions">
+      <button class="sub-btn" id="restartBtn">↺ リスタート</button>
+      <button class="main-btn" id="mainBtn">ゲーム開始</button>
+      <button class="sub-btn x-btn" id="shareBtn" title="結果をXにポスト">𝕏 ポスト</button>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <div class="history" id="history"></div>
+    <div class="hint"><kbd>H</kbd> HIGH ／ <kbd>L</kbd> LOW ／ <kbd>Space</kbd> めくる・次へ ／ <kbd>M</kbd> 配信モード ／ <kbd>X</kbd> ポスト</div>
+  </footer>
+</div>
+
+<button class="exit-stream" id="exitStream">✕ 配信モードを終了（Esc）</button>
+<div class="boom" id="boom"></div>
+<div class="toast" id="toast"></div>
+<div class="credit">柚子原 アル</div>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="setTitle">
+    <div class="modal-head"><h2 id="setTitle">⚙ ゲーム設定</h2><button class="icon-btn" id="closeSet" aria-label="閉じる">✕</button></div>
+    <div class="set-row">
+      <div><div class="set-name">同じ数字が出たとき</div><div class="set-desc">DRAW は連勝数そのまま、WIN は勝ちとしてカウント</div></div>
+      <div class="seg" data-key="drawRule"><button data-v="draw">DRAW</button><button data-v="win">WIN</button></div>
+    </div>
+    <div class="set-row">
+      <div class="set-name">アニメーション</div>
+      <div class="seg" data-key="anim"><button data-v="true">ON</button><button data-v="false">OFF</button></div>
+    </div>
+    <div class="set-row">
+      <div class="set-name">連勝数の表示</div>
+      <div class="seg" data-key="showStreak"><button data-v="true">ON</button><button data-v="false">OFF</button></div>
+    </div>
+    <div class="set-row">
+      <div><div class="set-name">追加のハッシュタグ</div><div class="set-desc">#ハイアンドロー #HIGHandLOW #Yuzuhara は常に付きます。追加分はスペース区切りで入力</div></div>
+      <input class="tag-in" id="tagIn" maxlength="80" placeholder="例：#配信 #企画" aria-label="追加のハッシュタグ">
+    </div>
+    <div class="set-row col">
+      <div class="set-name">背景色</div>
+      <div class="swatches" id="swatches"></div>
+    </div>
+    <p class="keys">ショートカット：H / ↑ … HIGH、L / ↓ … LOW、Space / Enter … めくる・次へ、M … 配信モード切替、Esc … 配信モード終了<br>
+    配信モードでは操作ボタンが薄くなります。マウスを乗せると表示されます。</p>
+  </div>
+</div>
+
+<script>
+(() => {
+const $ = s => document.querySelector(s);
+const SUITS = [['♠\uFE0E','black'],['♥\uFE0E','red'],['♦\uFE0E','red'],['♣\uFE0E','black']];
+const RANKS = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+const BGS = [
+  {n:'水色',c:'#d4effa'},{n:'空色',c:'#d3e5ff'},{n:'アクア',c:'#cdf3ee'},{n:'ミント',c:'#d6f3de'},
+  {n:'若草',c:'#e5f3c8'},{n:'レモン',c:'#faf4c4'},{n:'クリーム',c:'#fcefd6'},{n:'ピーチ',c:'#ffdfd0'},
+  {n:'さくら',c:'#ffdde8'},{n:'ラベンダー',c:'#e6defa'},{n:'ライラック',c:'#f0dbf3'},{n:'シルバー',c:'#e4e9ef'}
+];
+
+/* settings: 設定と参加者だけはブラウザに保存（ゲーム状態はリロードでリセット） */
+const store = {
+  get(k,d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } },
+  set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+const settings = Object.assign({drawRule:'draw', anim:true, showStreak:true, bg:BGS[0].c, tags:''}, store.get('hl-settings', {}));
+if (/^#ハイアンドロー #HIGHandLOW$/.test(settings.tags || '')) settings.tags = '';
+const G = {deck:[], base:null, next:null, state:'idle', pred:null, streak:0, best:0, history:[], last:null, busy:false,
+  players: store.get('hl-players', [])};
+
+const L = $('#cardL'), R = $('#cardR'), frontL = $('#frontL'), frontR = $('#frontR');
+const wait = ms => new Promise(r => setTimeout(r, ms));
+const anim = () => settings.anim;
+
+/* ---------- deck ---------- */
+function rnd(n){
+  if (window.crypto && crypto.getRandomValues){ const a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] % n; }
+  return Math.floor(Math.random() * n);
+}
+function newDeck(){
+  const d = [];
+  for (const [s,c] of SUITS) RANKS.forEach((r,i) => d.push({r, s, c, v:i+1}));
+  for (let i = d.length - 1; i > 0; i--){ const j = rnd(i+1); [d[i], d[j]] = [d[j], d[i]]; }
+  G.deck = d;
+}
+function draw(){
+  if (!G.deck.length){ newDeck(); toast('🃏 52枚使い切ったので新しいデッキに交換しました'); }
+  const c = G.deck.pop();
+  $('#deckPill').textContent = `山札 ${G.deck.length} / 52`;
+  return c;
+}
+const label = c => `${c.s}${c.r}`;
+const faceHTML = c => `
+  <div class="corner tl ${c.c}"><span class="r">${c.r}</span><span class="s">${c.s}</span></div>
+  <div class="center ${c.c}"><span class="r">${c.r}</span><span class="s">${c.s}</span></div>
+  <div class="corner br ${c.c}"><span class="r">${c.r}</span><span class="s">${c.s}</span></div>`;
+function instant(el, fn){ el.classList.add('instant'); fn(); void el.offsetWidth; el.classList.remove('instant'); }
+
+/* ---------- banner ---------- */
+function setBanner(dirClass, dirText, vClass, vText){
+  const d = $('#dirText'), v = $('#verdictText');
+  d.className = 'dir ' + dirClass; d.textContent = dirText;
+  v.className = 'verdict ' + (vClass || ''); v.textContent = vText || '';
+  if (anim()){ d.classList.remove('pop'); void d.offsetWidth; d.classList.add('pop'); }
+}
+
+/* ---------- flow ---------- */
+async function shuffleBack(first){
+  if (G.busy) return;
+  G.busy = true;
+  newDeck();
+  Object.assign(G, {state:'idle', pred:null, next:null, streak:0, history:[], last:null});
+  R.classList.remove('win','lose','drawn');
+  instant(R, () => { R.classList.remove('faceup','exit'); R.style.transform=''; });
+  if (anim() && !first){
+    L.classList.add('spin'); await wait(400);
+    G.base = draw(); frontL.innerHTML = faceHTML(G.base);
+    await wait(420); L.classList.remove('spin');
+    toast('🔀 シャッフルしました');
+  } else {
+    G.base = draw(); frontL.innerHTML = faceHTML(G.base);
+  }
+  setBanner('prompt', 'READY?', '', '「ゲーム開始」でスタート');
+  G.busy = false; updateUI();
+}
+function start(){
+  if (G.state !== 'idle' || G.busy) return;
+  G.state = 'predict';
+  setBanner('prompt', 'HIGH or LOW ?', '', `いまのカードは ${label(G.base)}`);
+  updateUI();
+}
+async function restart(){
+  await shuffleBack(false);
+  start();
+}
+function choose(p){
+  if (G.busy) return;
+  if (G.state === 'idle') start();
+  if (G.state !== 'predict') return;
+  G.pred = G.pred === p ? null : p;
+  updateUI();
+}
+async function flip(){
+  if (G.state !== 'predict' || G.busy) return;
+  G.busy = true; updateUI();
+  G.next = draw();
+  frontR.innerHTML = faceHTML(G.next);
+  if (anim()){
+    setBanner('prompt', 'OPEN!', '', '');
+    R.classList.add('tease'); await wait(520); R.classList.remove('tease');
+    R.classList.add('faceup','flipping'); await wait(720); R.classList.remove('flipping');
+  } else {
+    instant(R, () => R.classList.add('faceup'));
+  }
+  resolve();
+  G.busy = false; updateUI();
+}
+function resolve(){
+  const b = G.base.v, n = G.next.v;
+  const dir = n > b ? 'HIGH' : n < b ? 'LOW' : 'DRAW';
+  let verdict;
+  if (!G.pred) verdict = 'none';
+  else if (dir === 'DRAW') verdict = settings.drawRule === 'win' ? 'win' : 'draw';
+  else verdict = dir === G.pred ? 'win' : 'lose';
+
+  const prev = G.streak;
+  if (verdict === 'win'){ G.streak++; G.best = Math.max(G.best, G.streak); }
+  if (verdict === 'lose') G.streak = 0;
+
+  const s = settings.showStreak;
+  let vText = '', vClass = verdict;
+  if (verdict === 'win') vText = dir === 'DRAW' ? `同じ数字 → 勝ち扱い！${s ? `　${G.streak}連勝中` : ''}` : `的中！${s ? `　${G.streak}連勝中` : ''}`;
+  if (verdict === 'lose') vText = `ハズレ…${s && prev ? `　${prev}連勝でストップ` : ''}`;
+  if (verdict === 'draw') vText = '同じ数字！引き分け（連勝はそのまま）';
+  if (verdict === 'none') vText = '予想なし';
+  setBanner(dir.toLowerCase(), dir, vClass, vText);
+
+  R.classList.toggle('win', verdict === 'win');
+  R.classList.toggle('lose', verdict === 'lose');
+  R.classList.toggle('drawn', verdict === 'draw');
+
+  if (verdict === 'win'){
+    confetti(G.streak >= 5 ? 260 : 130);
+    const box = $('#streakBox'); box.classList.remove('bump'); void box.offsetWidth; box.classList.add('bump');
+    if (s && (G.streak === 3 || G.streak % 5 === 0)) boom(`🔥 ${G.streak}連勝！`);
+  }
+  if (verdict === 'lose' && anim()){
+    const st = $('#stage'); st.classList.remove('shake'); void st.offsetWidth; st.classList.add('shake');
+  }
+
+  G.last = {base:G.base, next:G.next, dir, pred:G.pred, verdict, prev};
+  G.history.unshift(G.last);
+  if (G.history.length > 12) G.history.pop();
+  G.state = 'result';
+}
+async function nextCard(){
+  if (G.state !== 'result' || G.busy) return;
+  G.busy = true; updateUI();
+  if (anim()){
+    const a = L.getBoundingClientRect(), b = R.getBoundingClientRect();
+    L.classList.add('exit');
+    R.style.transform = `translate(${a.left - b.left}px, ${a.top - b.top}px)`;
+    await wait(520);
+  }
+  G.base = G.next; G.next = null; G.pred = null;
+  frontL.innerHTML = faceHTML(G.base);
+  instant(L, () => L.classList.remove('exit'));
+  instant(R, () => { R.style.transform = ''; R.classList.remove('faceup','win','lose','drawn'); });
+  if (anim()){ R.classList.add('dealin'); setTimeout(() => R.classList.remove('dealin'), 520); }
+  G.state = 'predict';
+  setBanner('prompt', 'HIGH or LOW ?', '', `いまのカードは ${label(G.base)}`);
+  G.busy = false; updateUI();
+}
+function mainAction(){
+  if (G.state === 'idle') start();
+  else if (G.state === 'predict') flip();
+  else if (G.state === 'result') nextCard();
+}
+
+/* ---------- UI ---------- */
+function updateUI(){
+  const m = $('#mainBtn');
+  m.textContent = G.state === 'idle' ? 'ゲーム開始' : G.state === 'predict' ? 'カードをめくる' : '次のカードへ';
+  m.disabled = G.busy;
+  m.classList.toggle('ready', !G.busy && G.state === 'predict' && !!G.pred && anim());
+  const lock = G.busy || G.state === 'result';
+  $('#betH').disabled = $('#betL').disabled = lock;
+  $('#betH').classList.toggle('selected', G.pred === 'HIGH');
+  $('#betL').classList.toggle('selected', G.pred === 'LOW');
+  $('#bets').classList.toggle('has-pick', !!G.pred);
+  $('#restartBtn').disabled = G.busy;
+  $('#shareBtn').disabled = G.busy;
+  $('#streakNum').textContent = G.streak;
+  $('#bestNum').textContent = `最高 ${G.best}`;
+
+  const pb = $('#predBadge');
+  const p = G.pred || (G.last && G.state === 'result' ? G.last.pred : null);
+  pb.className = 'pred ' + (p ? p.toLowerCase() : 'none');
+  pb.innerHTML = `予想 <b>${p ? (p === 'HIGH' ? '▲ HIGH' : 'LOW ▼') : '？'}</b>`;
+
+  $('#history').innerHTML = G.history.map(h => {
+    const mark = h.dir === 'HIGH' ? '▲' : h.dir === 'LOW' ? '▼' : '＝';
+    return `<span class="hchip ${h.verdict}"><i class="${h.dir.toLowerCase()}">${mark}</i>${label(h.base)}→${label(h.next)}</span>`;
+  }).join('');
+
+  const l = G.last;
+  $('#lastLine').innerHTML = l ? `<span class="tag">直前の結果</span>${label(l.base)} → ${label(l.next)}　<span class="${l.dir.toLowerCase()}">${l.dir}</span>　${
+    l.verdict === 'win' ? '<span class="v-win">的中！</span>' : l.verdict === 'lose' ? '<span class="v-lose">ハズレ</span>' : l.verdict === 'draw' ? '<span class="draw">引き分け</span>' : ''}` : '';
+}
+
+/* ---------- players ---------- */
+function renderPlayers(){
+  $('#chips').innerHTML = G.players.map((n,i) =>
+    `<span class="chip">${escapeHTML(n)}<button class="x" data-i="${i}" aria-label="${escapeHTML(n)}を削除">✕</button></span>`).join('');
+  $('#players').classList.toggle('empty', !G.players.length);
+  store.set('hl-players', G.players);
+}
+function escapeHTML(s){ return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function addPlayer(){
+  const v = $('#playerIn').value.trim();
+  if (!v) return;
+  G.players.push(v); $('#playerIn').value = ''; renderPlayers();
+}
+
+/* ---------- settings ---------- */
+function applySettings(){
+  document.documentElement.style.setProperty('--bg', settings.bg);
+  document.body.classList.toggle('hide-streak', !settings.showStreak);
+  document.querySelectorAll('.seg').forEach(seg => {
+    const k = seg.dataset.key;
+    seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', String(settings[k]) === b.dataset.v));
+  });
+  document.querySelectorAll('.sw').forEach(b => b.classList.toggle('on', b.dataset.c === settings.bg));
+  if (document.activeElement !== $('#tagIn')) $('#tagIn').value = settings.tags;
+  store.set('hl-settings', settings);
+  updateUI();
+}
+$('#swatches').innerHTML = BGS.map(b => `<button class="sw" data-c="${b.c}" style="background:${b.c}">${b.n}</button>`).join('');
+
+/* ---------- fx ---------- */
+let toastT;
+function toast(msg){
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2200);
+}
+function boom(text){
+  if (!anim()) return;
+  const b = $('#boom'); b.textContent = text; b.classList.remove('go'); void b.offsetWidth; b.classList.add('go');
+}
+const cv = $('#fx'), cx = cv.getContext('2d');
+let parts = [], raf = 0;
+function sizeCanvas(){ const d = devicePixelRatio || 1; cv.width = innerWidth * d; cv.height = innerHeight * d; }
+addEventListener('resize', sizeCanvas); sizeCanvas();
+function confetti(n){
+  if (!anim()) return;
+  const cols = ['#e5323b','#1c62d6','#f2a100','#13a058','#ffffff','#ff7ab6'];
+  for (let i = 0; i < n; i++){
+    const side = i % 2 ? 1 : -1;
+    parts.push({x: innerWidth/2 + side * innerWidth * (.1 + Math.random()*.25), y: innerHeight * .45,
+      vx: side * (2 + Math.random()*9) * -1 + (Math.random()-.5)*6, vy: -8 - Math.random()*12,
+      w: 7 + Math.random()*8, h: 4 + Math.random()*6, r: Math.random()*6, vr: (Math.random()-.5)*.35,
+      c: cols[i % cols.length]});
+  }
+  if (!raf) raf = requestAnimationFrame(loop);
+}
+function loop(){
+  const d = devicePixelRatio || 1;
+  cx.setTransform(d,0,0,d,0,0); cx.clearRect(0,0,innerWidth,innerHeight);
+  for (const p of parts){
+    p.vy += .32; p.vx *= .985; p.x += p.vx; p.y += p.vy; p.r += p.vr;
+    cx.save(); cx.translate(p.x,p.y); cx.rotate(p.r); cx.scale(1, Math.cos(p.r*1.7));
+    cx.fillStyle = p.c; cx.fillRect(-p.w/2,-p.h/2,p.w,p.h); cx.restore();
+  }
+  parts = parts.filter(p => p.y < innerHeight + 40);
+  raf = parts.length ? requestAnimationFrame(loop) : 0;
+  if (!raf) cx.clearRect(0,0,innerWidth,innerHeight);
+}
+
+/* ---------- stream mode ---------- */
+function setStream(on){
+  document.body.classList.toggle('stream', on);
+  if (on) toast('📺 配信モード（Esc で終了）');
+}
+
+/* ---------- X share ---------- */
+const REQUIRED_TAGS = ['#ハイアンドロー', '#HIGHandLOW', '#Yuzuhara'];
+function comment(n){
+  if (n >= 13) return 'ギャンブラー💰';
+  if (n >= 9) return 'やるじゃん！！';
+  if (n >= 6) return 'まぁまぁ...';
+  return 'ざぁこ♡';
+}
+function shareText(){
+  const lines = ['🃏 HIGH & LOW'];
+  if (G.players.length) lines.push(`参加者：${G.players.join('・')}`);
+  lines.push(`🏆 最高記録：${G.best}連勝`);
+  lines.push(comment(G.best));
+  const extra = (settings.tags || '').trim().split(/\s+/).filter(Boolean).map(t => t.startsWith('#') ? t : '#' + t);
+  const tags = [...new Set([...REQUIRED_TAGS, ...extra])];
+  lines.push(tags.join(' '));
+  return lines.join('\n');
+}
+function shareX(){
+  const text = shareText();
+  const url = 'https://x.com/intent/post?text=' + encodeURIComponent(text);
+  const w = window.open(url, '_blank');
+  if (w) w.opener = null;
+  else toast('ポップアップがブロックされました。ブラウザの設定で許可してください');
+}
+
+/* ---------- events ---------- */
+$('#mainBtn').onclick = mainAction;
+$('#betH').onclick = () => choose('HIGH');
+$('#betL').onclick = () => choose('LOW');
+$('#restartBtn').onclick = restart;
+$('#shareBtn').onclick = shareX;
+$('#tagIn').addEventListener('input', e => { settings.tags = e.target.value; store.set('hl-settings', settings); });
+let armed = 0;
+$('#shuffleBtn').onclick = () => {
+  const btn = $('#shuffleBtn');
+  if (G.state === 'idle' || Date.now() - armed < 2500){
+    armed = 0; btn.classList.remove('armed'); btn.textContent = '🔀 シャッフル'; shuffleBack(false); return;
+  }
+  armed = Date.now(); btn.classList.add('armed'); btn.textContent = 'もう一度押す';
+  toast('もう一度押すとシャッフルして待機画面に戻ります（連勝リセット）');
+  setTimeout(() => { if (armed && Date.now() - armed >= 2500){ armed = 0; btn.classList.remove('armed'); btn.textContent = '🔀 シャッフル'; } }, 2600);
+};
+$('#streamBtn').onclick = () => setStream(true);
+$('#exitStream').onclick = () => setStream(false);
+$('#settingsBtn').onclick = () => $('#modalBg').classList.add('open');
+$('#closeSet').onclick = () => $('#modalBg').classList.remove('open');
+$('#modalBg').onclick = e => { if (e.target.id === 'modalBg') $('#modalBg').classList.remove('open'); };
+document.querySelectorAll('.seg').forEach(seg => seg.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const v = b.dataset.v; settings[seg.dataset.key] = v === 'true' ? true : v === 'false' ? false : v;
+  applySettings();
+}));
+$('#swatches').addEventListener('click', e => {
+  const b = e.target.closest('.sw'); if (!b) return;
+  settings.bg = b.dataset.c; applySettings();
+});
+$('#addPlayer').onclick = addPlayer;
+$('#playerIn').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing){ e.preventDefault(); addPlayer(); } });
+$('#chips').addEventListener('click', e => {
+  const x = e.target.closest('.x'); if (!x) return;
+  G.players.splice(+x.dataset.i, 1); renderPlayers();
+});
+document.addEventListener('keydown', e => {
+  if (e.target.matches('input')) return;
+  if ($('#modalBg').classList.contains('open')){ if (e.key === 'Escape') $('#modalBg').classList.remove('open'); return; }
+  const k = e.key.toLowerCase();
+  if (k === 'h' || e.key === 'ArrowUp'){ e.preventDefault(); choose('HIGH'); }
+  else if (k === 'l' || e.key === 'ArrowDown'){ e.preventDefault(); choose('LOW'); }
+  else if (e.key === ' ' || e.key === 'Enter'){
+    if (e.target.matches('button') && e.key === 'Enter') return;
+    e.preventDefault(); mainAction();
+  }
+  else if (k === 'x') shareX();
+  else if (k === 'm') setStream(!document.body.classList.contains('stream'));
+  else if (e.key === 'Escape') setStream(false);
+});
+
+/* ---------- init ---------- */
+renderPlayers();
+applySettings();
+shuffleBack(true);
+})();
+</script>
+</body>
+</html>
