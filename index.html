@@ -4,6 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>HIGH &amp; LOW｜配信用ハイ＆ロー</title>
+<!-- Discord / X などでリンクを貼ったときのカード表示（OGP）
+     ↓ 「ユーザー名」の2か所を自分のGitHubユーザー名に書き換えてください -->
+<meta name="description" content="次は高い？低い？配信で遊べるトランプのハイ＆ローゲーム。連勝を目指そう！">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="柚子原 アル">
+<meta property="og:title" content="HIGH &amp; LOW｜配信用ハイ＆ロー">
+<meta property="og:description" content="次は高い？低い？配信で遊べるトランプのハイ＆ローゲーム。連勝を目指そう！">
+<meta property="og:url" content="https://ユーザー名.github.io/highlow/">
+<meta property="og:image" content="https://ユーザー名.github.io/highlow/ogp.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#1c62d6">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bungee&family=M+PLUS+Rounded+1c:wght@500;800;900&display=swap" rel="stylesheet">
@@ -247,6 +260,7 @@ body.stream .exit-stream{display:block}
     </div>
     <div class="tools">
       <span class="pill" id="deckPill">山札 52 / 52</span>
+      <button class="tool" id="linkBtn" title="このページのURLをコピー">🔗 共有リンク</button>
       <button class="tool" id="streamBtn">📺 配信モード</button>
       <button class="tool" id="settingsBtn">⚙ 設定</button>
       <button class="tool mini" id="shuffleBtn" title="シャッフルして待機画面に戻る">🔀 シャッフル</button>
@@ -632,12 +646,29 @@ function shareX(){
   else toast('ポップアップがブロックされました。ブラウザの設定で許可してください');
 }
 
+/* ---------- share link ---------- */
+async function shareLink(){
+  const url = location.href.split('#')[0];
+  if (navigator.share && matchMedia('(pointer:coarse)').matches){
+    try { await navigator.share({title:'HIGH & LOW', url}); return; } catch(e){ if (e.name === 'AbortError') return; }
+  }
+  let ok = false;
+  try { await navigator.clipboard.writeText(url); ok = true; } catch(e){
+    const t = document.createElement('textarea'); t.value = url; t.style.position = 'fixed'; t.style.opacity = '0';
+    document.body.appendChild(t); t.select();
+    try { ok = document.execCommand('copy'); } catch(_){}
+    t.remove();
+  }
+  toast(ok ? '🔗 リンクをコピーしました' : `コピーできませんでした：${url}`);
+}
+
 /* ---------- events ---------- */
 $('#mainBtn').onclick = mainAction;
 $('#betH').onclick = () => choose('HIGH');
 $('#betL').onclick = () => choose('LOW');
 $('#restartBtn').onclick = restart;
 $('#shareBtn').onclick = shareX;
+$('#linkBtn').onclick = shareLink;
 $('#tagIn').addEventListener('input', e => { settings.tags = e.target.value; store.set('hl-settings', settings); });
 let armed = 0;
 $('#shuffleBtn').onclick = () => {
